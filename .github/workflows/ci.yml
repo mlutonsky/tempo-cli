@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python }}
+        run: uv python install ${{ matrix.python }}
+      - name: Lint
+        run: uv run --python ${{ matrix.python }} --group dev ruff check .
+      - name: Test
+        run: uv run --python ${{ matrix.python }} --group dev pytest -q

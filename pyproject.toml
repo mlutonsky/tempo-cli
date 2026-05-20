@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tempo-cli"
+version = "0.1.0"
+description = "JSON-first CLI over the Tempo (Jira) REST API, designed for LLM agents and humans."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Martin Lutonsky" }]
+dependencies = [
+    "typer>=0.12",
+    "httpx>=0.27,<1.0",  # token-bearing dep; pin the major to avoid auth-handling surprises
+    "rich>=13.7",
+    "python-dateutil>=2.9",
+]
+
+[project.scripts]
+tempo-cli = "tempo_cli.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tempo_cli"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"CLAUDE.md" = "tempo_cli/CLAUDE.md"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F",   # pyflakes + pycodestyle
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # flake8-simplify
+    "RUF",      # ruff-specific
+]
+ignore = [
+    "E501",   # line too long — line-length is the source of truth
+    "B008",   # function call in argument defaults — typer.Option idiom
+    "UP007",  # X | None vs Optional[X] — Typer works either way
+    "SIM105", # contextlib.suppress vs try/except/pass — try/except is clearer here
+    "SIM102", # nested if — sometimes clearer than `and`
+    "SIM108", # ternary — sometimes clearer as if/else
+    "RUF002", # ambiguous unicode in docstrings — we use × / – deliberately
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["RUF059"]  # capsys.readouterr() always returns (out, err); both names aid readability
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-q"
