@@ -22,5 +22,7 @@ jobs:
         run: uv python install ${{ matrix.python }}
       - name: Lint
         run: uv run --python ${{ matrix.python }} --group dev ruff check .
+      - name: Format check
+        run: uv run --python ${{ matrix.python }} --group dev ruff format --check .
       - name: Test
         run: uv run --python ${{ matrix.python }} --group dev pytest -q

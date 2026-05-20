@@ -16,8 +16,7 @@ _ACCOUNT_ID_RE = re.compile(r"^[A-Za-z0-9:._-]{1,128}$")
 def _validate_account_id(account_id: str) -> str:
     if not _ACCOUNT_ID_RE.match(account_id):
         raise InputError(
-            f"invalid accountId {account_id!r}; "
-            "expected up to 128 chars of [A-Za-z0-9:._-]"
+            f"invalid accountId {account_id!r}; expected up to 128 chars of [A-Za-z0-9:._-]"
         )
     return account_id
 

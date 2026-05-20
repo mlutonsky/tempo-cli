@@ -34,12 +34,14 @@ def list_(
                 acc = resolve_user(user or "@me")
                 path = f"/plans/user/{acc}"
             raw = list(client.paginate(path, params=params))
-        emit({
-            "from": rng.from_iso,
-            "to": rng.to_iso,
-            "count": len(raw),
-            "plans": [normalise_plan(p) for p in raw],
-        })
+        emit(
+            {
+                "from": rng.from_iso,
+                "to": rng.to_iso,
+                "count": len(raw),
+                "plans": [normalise_plan(p) for p in raw],
+            }
+        )
     except Exception as e:
         emit_error(e)
 
@@ -71,13 +73,22 @@ def _resolve_plan_item(issue: str | None, project: str | None) -> dict[str, str]
 def add(
     start: Annotated[str, typer.Option("--start", help="Plan start date")],
     end: Annotated[str, typer.Option("--end", help="Plan end date (inclusive)")],
-    per_day: Annotated[str, typer.Option("--per-day", help="Planned duration per day, e.g. 4h or 30m")],
+    per_day: Annotated[
+        str, typer.Option("--per-day", help="Planned duration per day, e.g. 4h or 30m")
+    ],
     issue: Annotated[str | None, typer.Option("--issue")] = None,
     project: Annotated[str | None, typer.Option("--project")] = None,
     user: Annotated[str, typer.Option("--user", help="Assignee, `@me` or accountId")] = "@me",
-    team: Annotated[int | None, typer.Option("--team", help="Assign to a team instead of a user")] = None,
+    team: Annotated[
+        int | None, typer.Option("--team", help="Assign to a team instead of a user")
+    ] = None,
     description: Annotated[str | None, typer.Option("--description")] = None,
-    dry_run: Annotated[bool, typer.Option("--dry-run", help="Print the request that WOULD be sent and exit without writing.")] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run", help="Print the request that WOULD be sent and exit without writing."
+        ),
+    ] = False,
 ):
     """Create a plan. Body shape follows Tempo v4 /plans POST."""
     try:
@@ -100,7 +111,13 @@ def add(
             return
         with TempoClient() as client:
             raw = client.post("/plans", body)
-        audit.record(command="plan.add", method="POST", path="/plans", body=body, result={"id": raw.get("id") if isinstance(raw, dict) else None})
+        audit.record(
+            command="plan.add",
+            method="POST",
+            path="/plans",
+            body=body,
+            result={"id": raw.get("id") if isinstance(raw, dict) else None},
+        )
         emit(normalise_plan(raw))
     except Exception as e:
         emit_error(e)
@@ -113,7 +130,12 @@ def update(
     end: Annotated[str | None, typer.Option("--end")] = None,
     per_day: Annotated[str | None, typer.Option("--per-day")] = None,
     description: Annotated[str | None, typer.Option("--description")] = None,
-    dry_run: Annotated[bool, typer.Option("--dry-run", help="Print the request that WOULD be sent and exit without writing.")] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run", help="Print the request that WOULD be sent and exit without writing."
+        ),
+    ] = False,
 ):
     """Update mutable fields of an existing plan."""
     try:
@@ -126,7 +148,8 @@ def update(
             body = {
                 "startDate": current.get("startDate"),
                 "endDate": current.get("endDate"),
-                "secondsPerDay": current.get("secondsPerDay") or current.get("plannedSecondsPerDay"),
+                "secondsPerDay": current.get("secondsPerDay")
+                or current.get("plannedSecondsPerDay"),
                 "planItem": plan_item,
                 "description": current.get("description"),
             }
@@ -145,11 +168,15 @@ def update(
             if description is not None:
                 body["description"] = description
             if dry_run:
-                audit.record(command="plan.update", method="PUT", path=path, body=body, dry_run=True)
+                audit.record(
+                    command="plan.update", method="PUT", path=path, body=body, dry_run=True
+                )
                 emit(audit.dry_run_response("plan.update", "PUT", path, body))
                 return
             raw = client.put(path, body)
-        audit.record(command="plan.update", method="PUT", path=path, body=body, result={"id": plan_id})
+        audit.record(
+            command="plan.update", method="PUT", path=path, body=body, result={"id": plan_id}
+        )
         emit(normalise_plan(raw))
     except Exception as e:
         emit_error(e)
@@ -158,7 +185,12 @@ def update(
 @app.command("delete")
 def delete(
     plan_id: int,
-    dry_run: Annotated[bool, typer.Option("--dry-run", help="Print the request that WOULD be sent and exit without writing.")] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run", help="Print the request that WOULD be sent and exit without writing."
+        ),
+    ] = False,
 ):
     """Delete a plan."""
     try:

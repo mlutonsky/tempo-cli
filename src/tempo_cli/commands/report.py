@@ -18,6 +18,7 @@ def _validate_top(name: str, value: int | None) -> None:
     if value is not None and value < 0:
         raise InputError(f"--{name} must be >= 0 (got {value})")
 
+
 app = typer.Typer(help="Aggregated reports.", no_args_is_help=True)
 
 
@@ -52,14 +53,19 @@ def _period_report(period: str, user: str, *, as_table: bool) -> None:
         rng = named_period(period)
         acc = resolve_user(user)
         with TempoClient() as client:
-            schedule = client.get(
-                f"/user-schedule/{acc}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ) or {}
-            worklogs_raw = list(client.paginate(
-                f"/worklogs/user/{acc}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ))
+            schedule = (
+                client.get(
+                    f"/user-schedule/{acc}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+                or {}
+            )
+            worklogs_raw = list(
+                client.paginate(
+                    f"/worklogs/user/{acc}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+            )
         schedule_days = (schedule.get("results") if isinstance(schedule, dict) else []) or []
         required_total = sum((d.get("requiredSeconds") or 0) for d in schedule_days)
         logged_by_day: dict[str, int] = defaultdict(int)
@@ -71,12 +77,14 @@ def _period_report(period: str, user: str, *, as_table: bool) -> None:
         by_day = []
         for d in schedule_days:
             day = d.get("date")
-            by_day.append({
-                "date": day,
-                "required": d.get("requiredSeconds") or 0,
-                "logged": logged_by_day.get(day, 0),
-                "type": d.get("type"),
-            })
+            by_day.append(
+                {
+                    "date": day,
+                    "required": d.get("requiredSeconds") or 0,
+                    "logged": logged_by_day.get(day, 0),
+                    "type": d.get("type"),
+                }
+            )
         data = {
             "period": period,
             "from": rng.from_iso,
@@ -91,7 +99,7 @@ def _period_report(period: str, user: str, *, as_table: bool) -> None:
             data,
             as_table=as_table,
             table_renderer=lambda d: render_seconds_table(
-                f"{period} {d['from']}..{d['to']} — required {d['requiredSeconds']//60}m / logged {d['loggedSeconds']//60}m",
+                f"{period} {d['from']}..{d['to']} — required {d['requiredSeconds'] // 60}m / logged {d['loggedSeconds'] // 60}m",
                 [(b["date"], b["logged"]) for b in d["byDay"]],
             ),
         )
@@ -133,10 +141,12 @@ def by_issue(
         rng = resolve_range(from_, to)
         acc = resolve_user(user)
         with TempoClient() as client:
-            raw = list(client.paginate(
-                f"/worklogs/user/{acc}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ))
+            raw = list(
+                client.paginate(
+                    f"/worklogs/user/{acc}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+            )
         by_id: dict[int, int] = defaultdict(int)
         for r in raw:
             issue = r.get("issue") or {}
@@ -227,9 +237,13 @@ def by_user(
 def period(
     ctx: typer.Context,
     user: Annotated[str, typer.Option("--user")] = "@me",
-    from_: Annotated[str | None, typer.Option("--from", help="Period start date or shortcut")] = None,
+    from_: Annotated[
+        str | None, typer.Option("--from", help="Period start date or shortcut")
+    ] = None,
     to: Annotated[str | None, typer.Option("--to")] = None,
-    name: Annotated[str | None, typer.Option("--period", help="this-week|last-week|this-month|last-month")] = None,
+    name: Annotated[
+        str | None, typer.Option("--period", help="this-week|last-week|this-month|last-month")
+    ] = None,
 ):
     """Tempo period view: required vs. logged plus approval status.
 
@@ -244,10 +258,13 @@ def period(
             rng = resolve_range(from_, to)
         acc = resolve_user(user)
         with TempoClient() as client:
-            data = client.get(
-                f"/timesheet-approvals/user/{acc}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ) or {}
+            data = (
+                client.get(
+                    f"/timesheet-approvals/user/{acc}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+                or {}
+            )
         required = data.get("requiredSeconds") or 0
         logged = data.get("timeSpentSeconds") or 0
         status = (data.get("status") or {}).get("key")
@@ -311,7 +328,9 @@ def _rollups(raw: list[dict]) -> dict[str, Any]:
 @app.command("by-project")
 def by_project(
     ctx: typer.Context,
-    project: Annotated[str, typer.Option("--project", help="Project key (e.g. STAN) or numeric id")],
+    project: Annotated[
+        str, typer.Option("--project", help="Project key (e.g. STAN) or numeric id")
+    ],
     from_: Annotated[str | None, typer.Option("--from")] = None,
     to: Annotated[str | None, typer.Option("--to")] = None,
     top_users: Annotated[int | None, typer.Option("--top-users")] = None,
@@ -325,10 +344,12 @@ def by_project(
         rng = resolve_range(from_, to)
         pid = resolve_project_id(project)
         with TempoClient() as client:
-            raw = list(client.paginate(
-                f"/worklogs/project/{pid}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ))
+            raw = list(
+                client.paginate(
+                    f"/worklogs/project/{pid}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+            )
         roll = _rollups(raw)
         if top_users is not None:
             roll["byUser"] = roll["byUser"][:top_users]
@@ -358,7 +379,12 @@ def by_project(
 @app.command("by-filter")
 def by_filter(
     ctx: typer.Context,
-    filter_: Annotated[str, typer.Option("--filter", help="Numeric Jira filter id, or exact filter name (own/favourite)")],
+    filter_: Annotated[
+        str,
+        typer.Option(
+            "--filter", help="Numeric Jira filter id, or exact filter name (own/favourite)"
+        ),
+    ],
     from_: Annotated[str | None, typer.Option("--from")] = None,
     to: Annotated[str | None, typer.Option("--to")] = None,
     top_users: Annotated[int | None, typer.Option("--top-users")] = None,
@@ -372,10 +398,12 @@ def by_filter(
         rng = resolve_range(from_, to)
         filter_id, filter_name = resolve_filter(filter_)
         with TempoClient() as client:
-            raw = list(client.paginate(
-                f"/worklogs/jira-filter/{filter_id}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ))
+            raw = list(
+                client.paginate(
+                    f"/worklogs/jira-filter/{filter_id}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+            )
         roll = _rollups(raw)
         if top_users is not None:
             roll["byUser"] = roll["byUser"][:top_users]
@@ -415,14 +443,18 @@ def plan_vs_actual(
         rng = resolve_range(from_, to)
         acc = resolve_user(user)
         with TempoClient() as client:
-            plans = list(client.paginate(
-                f"/plans/user/{acc}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ))
-            worklogs = list(client.paginate(
-                f"/worklogs/user/{acc}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ))
+            plans = list(
+                client.paginate(
+                    f"/plans/user/{acc}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+            )
+            worklogs = list(
+                client.paginate(
+                    f"/worklogs/user/{acc}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+            )
         planned = sum(_plan_seconds_in_window(p, rng) for p in plans)
         logged = sum((w.get("timeSpentSeconds") or 0) for w in worklogs)
         emit(

@@ -38,6 +38,7 @@ def _parse_attributes(pairs: list[str] | None) -> list[dict[str, str]] | None:
         out.append({"key": k, "value": v})
     return out
 
+
 app = typer.Typer(help="Worklog CRUD operations.", no_args_is_help=True)
 
 
@@ -61,16 +62,20 @@ def list_(
         with TempoClient() as client:
             if issue:
                 iid = resolve_issue_id(issue)
-                results = list(client.paginate(
-                    f"/worklogs/issue/{iid}",
-                    params={"from": rng.from_iso, "to": rng.to_iso},
-                ))
+                results = list(
+                    client.paginate(
+                        f"/worklogs/issue/{iid}",
+                        params={"from": rng.from_iso, "to": rng.to_iso},
+                    )
+                )
             else:
                 acc = resolve_user(user)
-                results = list(client.paginate(
-                    f"/worklogs/user/{acc}",
-                    params={"from": rng.from_iso, "to": rng.to_iso},
-                ))
+                results = list(
+                    client.paginate(
+                        f"/worklogs/user/{acc}",
+                        params={"from": rng.from_iso, "to": rng.to_iso},
+                    )
+                )
         worklogs = [normalise_worklog(r) for r in results]
         if limit is not None:
             worklogs = worklogs[:limit]
@@ -87,7 +92,10 @@ def list_(
             as_table=as_table,
             table_renderer=lambda d: render_seconds_table(
                 f"Worklogs {d['from']}..{d['to']} ({d['count']})",
-                [(f"{w.get('date')} {w.get('description') or ''}", w.get("seconds") or 0) for w in d["worklogs"]],
+                [
+                    (f"{w.get('date')} {w.get('description') or ''}", w.get("seconds") or 0)
+                    for w in d["worklogs"]
+                ],
             ),
         )
     except Exception as e:
@@ -113,9 +121,18 @@ def add(
     description: Annotated[str | None, typer.Option("--description")] = None,
     start: Annotated[str | None, typer.Option("--start", help="HH:MM (24h)")] = None,
     user: Annotated[str, typer.Option("--user", help="`@me` or accountId")] = "@me",
-    billable: Annotated[int | None, typer.Option("--billable-seconds", help="Defaults to duration")] = None,
-    attribute: Annotated[list[str] | None, typer.Option("--attribute", help="Work attribute KEY=VALUE (repeatable)")] = None,
-    dry_run: Annotated[bool, typer.Option("--dry-run", help="Print the request that WOULD be sent and exit without writing.")] = False,
+    billable: Annotated[
+        int | None, typer.Option("--billable-seconds", help="Defaults to duration")
+    ] = None,
+    attribute: Annotated[
+        list[str] | None, typer.Option("--attribute", help="Work attribute KEY=VALUE (repeatable)")
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run", help="Print the request that WOULD be sent and exit without writing."
+        ),
+    ] = False,
 ):
     """Create a worklog."""
     try:
@@ -138,12 +155,20 @@ def add(
         if attrs:
             body["attributes"] = attrs
         if dry_run:
-            audit.record(command="worklog.add", method="POST", path="/worklogs", body=body, dry_run=True)
+            audit.record(
+                command="worklog.add", method="POST", path="/worklogs", body=body, dry_run=True
+            )
             emit(audit.dry_run_response("worklog.add", "POST", "/worklogs", body))
             return
         with TempoClient() as client:
             raw = client.post("/worklogs", body)
-        audit.record(command="worklog.add", method="POST", path="/worklogs", body=body, result={"id": raw.get("tempoWorklogId") if isinstance(raw, dict) else None})
+        audit.record(
+            command="worklog.add",
+            method="POST",
+            path="/worklogs",
+            body=body,
+            result={"id": raw.get("tempoWorklogId") if isinstance(raw, dict) else None},
+        )
         emit(normalise_worklog(raw))
     except Exception as e:
         emit_error(e)
@@ -157,15 +182,25 @@ def update(
     date: Annotated[str | None, typer.Option("--date")] = None,
     start: Annotated[str | None, typer.Option("--start")] = None,
     billable: Annotated[int | None, typer.Option("--billable-seconds")] = None,
-    attribute: Annotated[list[str] | None, typer.Option("--attribute", help="Work attribute KEY=VALUE (repeatable; replaces all attributes)")] = None,
-    dry_run: Annotated[bool, typer.Option("--dry-run", help="Print the request that WOULD be sent and exit without writing.")] = False,
+    attribute: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--attribute", help="Work attribute KEY=VALUE (repeatable; replaces all attributes)"
+        ),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run", help="Print the request that WOULD be sent and exit without writing."
+        ),
+    ] = False,
 ):
     """Update fields on an existing worklog."""
     try:
         path = f"/worklogs/{worklog_id}"
         with TempoClient() as client:
             current = client.get(path) or {}
-            existing_attrs = ((current.get("attributes") or {}).get("values") or [])
+            existing_attrs = (current.get("attributes") or {}).get("values") or []
             body = {
                 "timeSpentSeconds": current.get("timeSpentSeconds"),
                 "billableSeconds": current.get("billableSeconds"),
@@ -174,7 +209,9 @@ def update(
                 "description": current.get("description"),
                 "authorAccountId": (current.get("author") or {}).get("accountId"),
                 # Preserve current attributes by default — Tempo PUT is replace, not patch.
-                "attributes": [{"key": a.get("key"), "value": a.get("value")} for a in existing_attrs],
+                "attributes": [
+                    {"key": a.get("key"), "value": a.get("value")} for a in existing_attrs
+                ],
             }
             if duration is not None:
                 body["timeSpentSeconds"] = parse_duration(duration)
@@ -192,11 +229,15 @@ def update(
             if attrs is not None:
                 body["attributes"] = attrs
             if dry_run:
-                audit.record(command="worklog.update", method="PUT", path=path, body=body, dry_run=True)
+                audit.record(
+                    command="worklog.update", method="PUT", path=path, body=body, dry_run=True
+                )
                 emit(audit.dry_run_response("worklog.update", "PUT", path, body))
                 return
             raw = client.put(path, body)
-        audit.record(command="worklog.update", method="PUT", path=path, body=body, result={"id": worklog_id})
+        audit.record(
+            command="worklog.update", method="PUT", path=path, body=body, result={"id": worklog_id}
+        )
         emit(normalise_worklog(raw))
     except Exception as e:
         emit_error(e)
@@ -205,7 +246,12 @@ def update(
 @app.command("delete")
 def delete(
     worklog_id: int,
-    dry_run: Annotated[bool, typer.Option("--dry-run", help="Print the request that WOULD be sent and exit without writing.")] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run", help="Print the request that WOULD be sent and exit without writing."
+        ),
+    ] = False,
 ):
     """Delete a worklog by id."""
     try:
@@ -216,7 +262,9 @@ def delete(
             return
         with TempoClient() as client:
             client.delete(path)
-        audit.record(command="worklog.delete", method="DELETE", path=path, result={"id": worklog_id})
+        audit.record(
+            command="worklog.delete", method="DELETE", path=path, result={"id": worklog_id}
+        )
         emit({"deleted": True, "id": worklog_id})
     except Exception as e:
         emit_error(e)

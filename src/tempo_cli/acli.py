@@ -90,7 +90,16 @@ def my_account_id() -> str:
     if isinstance(cached, str):
         return cached
     data = _run(
-        ["jira", "workitem", "search", "--jql", "assignee = currentUser()", "--limit", "1", "--json"]
+        [
+            "jira",
+            "workitem",
+            "search",
+            "--jql",
+            "assignee = currentUser()",
+            "--limit",
+            "1",
+            "--json",
+        ]
     )
     issues = _extract_issues(data)
     for issue in issues:

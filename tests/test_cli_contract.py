@@ -31,7 +31,10 @@ def test_missing_required_option_emits_json_error(monkeypatch, capsys):
     assert rc != 0
     payload = json.loads(err)  # MUST be valid JSON, not plain text
     assert payload["error"]["code"] == "input_error"
-    assert "Missing option" in payload["error"]["message"] or "duration" in payload["error"]["message"].lower()
+    assert (
+        "Missing option" in payload["error"]["message"]
+        or "duration" in payload["error"]["message"].lower()
+    )
     assert out == ""  # stdout stays clean on error
 
 

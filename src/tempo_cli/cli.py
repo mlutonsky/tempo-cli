@@ -31,7 +31,9 @@ def _version_cb(value: bool) -> None:
 @app.callback()
 def _root(
     ctx: typer.Context,
-    table: bool = typer.Option(False, "--table", help="Render output as a human-readable table instead of JSON."),
+    table: bool = typer.Option(
+        False, "--table", help="Render output as a human-readable table instead of JSON."
+    ),
     version: bool = typer.Option(
         False, "--version", help="Print version and exit.", is_eager=True, callback=_version_cb
     ),

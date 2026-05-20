@@ -29,7 +29,9 @@ def test_project_id_for_key_missing(patch_acli):
 
 def test_filter_lookup_numeric_short_circuits(monkeypatch):
     # numeric id must NOT invoke acli
-    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: (_ for _ in ()).throw(AssertionError("no call")))
+    monkeypatch.setattr(
+        subprocess, "run", lambda *a, **kw: (_ for _ in ()).throw(AssertionError("no call"))
+    )
     monkeypatch.setattr(acli.shutil, "which", lambda _: "/usr/bin/acli")
     assert acli.filter_lookup("20416") == (20416, None)
 
@@ -53,7 +55,12 @@ def test_filter_lookup_not_found(patch_acli):
 
 def test_display_name_resolves_and_caches(patch_acli):
     calls = []
-    payload = [{"key": "X-1", "fields": {"assignee": {"accountId": "557058:abc-1", "displayName": "Alice"}}}]
+    payload = [
+        {
+            "key": "X-1",
+            "fields": {"assignee": {"accountId": "557058:abc-1", "displayName": "Alice"}},
+        }
+    ]
 
     def run(args, **kw):
         calls.append(args)

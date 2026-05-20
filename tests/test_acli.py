@@ -39,7 +39,9 @@ def test_my_account_id_from_search(patch_acli, monkeypatch):
     patch_acli(lambda args, **kw: CompletedProc(stdout=json.dumps(payload)))
     assert acli.my_account_id() == "abc"
     # cached: no further subprocess invocations needed
-    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: (_ for _ in ()).throw(AssertionError("should not call")))
+    monkeypatch.setattr(
+        subprocess, "run", lambda *a, **kw: (_ for _ in ()).throw(AssertionError("should not call"))
+    )
     assert acli.my_account_id() == "abc"
 
 

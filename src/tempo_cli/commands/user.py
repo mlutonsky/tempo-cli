@@ -17,7 +17,10 @@ app = typer.Typer(help="User-centric queries.", no_args_is_help=True)
 
 @app.command("me")
 def me(
-    account_id: Annotated[str | None, typer.Option("--account-id", help="Seed the cache instead of resolving via acli")] = None,
+    account_id: Annotated[
+        str | None,
+        typer.Option("--account-id", help="Seed the cache instead of resolving via acli"),
+    ] = None,
 ):
     """Return the current Jira accountId. Cached after first successful lookup.
 
@@ -48,10 +51,12 @@ def worklogs(
         rng = resolve_range(from_, to)
         acc = resolve_user(user)
         with TempoClient() as client:
-            raw = list(client.paginate(
-                f"/worklogs/user/{acc}",
-                params={"from": rng.from_iso, "to": rng.to_iso},
-            ))
+            raw = list(
+                client.paginate(
+                    f"/worklogs/user/{acc}",
+                    params={"from": rng.from_iso, "to": rng.to_iso},
+                )
+            )
         worklogs = [normalise_worklog(r) for r in raw]
         by_issue: dict[int, int] = defaultdict(int)
         by_day: dict[str, int] = defaultdict(int)
@@ -72,10 +77,7 @@ def worklogs(
                 {"issueId": iid, "seconds": secs}
                 for iid, secs in sorted(by_issue.items(), key=lambda x: -x[1])
             ],
-            "byDay": [
-                {"date": d, "seconds": secs}
-                for d, secs in sorted(by_day.items())
-            ],
+            "byDay": [{"date": d, "seconds": secs} for d, secs in sorted(by_day.items())],
             "worklogs": worklogs,
         }
         emit(

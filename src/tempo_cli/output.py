@@ -62,8 +62,8 @@ def render_seconds_table(title: str, rows: list[tuple[str, int]]) -> None:
     total = 0
     for label, secs in rows:
         total += secs
-        table.add_row(label, format_duration(secs), f"{secs/3600:.2f}")
+        table.add_row(label, format_duration(secs), f"{secs / 3600:.2f}")
     table.add_section()
-    table.add_row("TOTAL", format_duration(total), f"{total/3600:.2f}")
+    table.add_row("TOTAL", format_duration(total), f"{total / 3600:.2f}")
     _console = Console()
     _console.print(table)

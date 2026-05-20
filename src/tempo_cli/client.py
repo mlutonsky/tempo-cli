@@ -17,9 +17,11 @@ DEFAULT_TIMEOUT = 20.0
 
 def _base_url() -> str:
     return os.environ.get("TEMPO_API_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
-MAX_ATTEMPTS = 3            # total attempts incl. the first; "retries" = MAX_ATTEMPTS - 1
-RETRY_BACKOFF_BASE = 0.5    # seconds; doubled per attempt
-RETRY_DELAY_CAP = 60.0      # never sleep longer than this in one go
+
+
+MAX_ATTEMPTS = 3  # total attempts incl. the first; "retries" = MAX_ATTEMPTS - 1
+RETRY_BACKOFF_BASE = 0.5  # seconds; doubled per attempt
+RETRY_DELAY_CAP = 60.0  # never sleep longer than this in one go
 
 
 def _parse_retry_after(header_value: str | None, fallback: float) -> float:
@@ -68,7 +70,9 @@ class _BearerAuth(httpx.Auth):
 class TempoClient:
     """Thin httpx wrapper over the Tempo v4 REST API."""
 
-    def __init__(self, *, base_url: str | None = None, transport: httpx.BaseTransport | None = None) -> None:
+    def __init__(
+        self, *, base_url: str | None = None, transport: httpx.BaseTransport | None = None
+    ) -> None:
         self._http = httpx.Client(
             base_url=base_url if base_url is not None else _base_url(),
             auth=_BearerAuth(_token()),
@@ -152,7 +156,9 @@ class TempoClient:
     def delete(self, path: str) -> Any:
         return self.request("DELETE", path)
 
-    def paginate(self, path: str, *, params: dict | None = None, page_size: int = 100) -> Iterator[dict]:
+    def paginate(
+        self, path: str, *, params: dict | None = None, page_size: int = 100
+    ) -> Iterator[dict]:
         """Yield every result across paginated responses ({results, metadata}).
 
         Tempo v4 uses limit/offset and exposes metadata.next URLs; we follow `offset`.

@@ -23,21 +23,26 @@ def schedule(
         rng = resolve_range(from_, to, default="this-week")
         acc = resolve_user(user)
         with TempoClient() as client:
-            data = client.get(f"/user-schedule/{acc}", params={"from": rng.from_iso, "to": rng.to_iso}) or {}
+            data = (
+                client.get(f"/user-schedule/{acc}", params={"from": rng.from_iso, "to": rng.to_iso})
+                or {}
+            )
         days = (data.get("results") if isinstance(data, dict) else []) or []
-        emit({
-            "user": {"accountId": acc},
-            "from": rng.from_iso,
-            "to": rng.to_iso,
-            "totalRequiredSeconds": sum((d.get("requiredSeconds") or 0) for d in days),
-            "days": [
-                {
-                    "date": d.get("date"),
-                    "requiredSeconds": d.get("requiredSeconds"),
-                    "type": d.get("type"),
-                }
-                for d in days
-            ],
-        })
+        emit(
+            {
+                "user": {"accountId": acc},
+                "from": rng.from_iso,
+                "to": rng.to_iso,
+                "totalRequiredSeconds": sum((d.get("requiredSeconds") or 0) for d in days),
+                "days": [
+                    {
+                        "date": d.get("date"),
+                        "requiredSeconds": d.get("requiredSeconds"),
+                        "type": d.get("type"),
+                    }
+                    for d in days
+                ],
+            }
+        )
     except Exception as e:
         emit_error(e)
